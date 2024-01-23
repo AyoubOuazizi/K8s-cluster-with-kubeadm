@@ -1,0 +1,136 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Data Visualization</title>
+
+    <!-- Ajout de la CDN Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Ajout de la CDN de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.8.0"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Real-time Data Visualization</h1>
+
+        <!-- Utilisation de cartes Bootstrap pour afficher les données -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">TCP Statistics</h5>
+                        <p class="card-text">Total Packets: <span id="tcp-total-packets"></span></p>
+                        <p class="card-text">Average Size: <span id="tcp-average-size"></span></p>
+                        <p class="card-text">Packets in Last Second: <span id="tcp-packets-last-second"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">UDP Statistics</h5>
+                        <p class="card-text">Total Packets: <span id="udp-total-packets"></span></p>
+                        <p class="card-text">Average Size: <span id="udp-average-size"></span></p>
+                        <p class="card-text">Packets in Last Second: <span id="udp-packets-last-second"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">ICMP Statistics</h5>
+                        <p class="card-text">Total Packets: <span id="icmp-total-packets"></span></p>
+                        <p class="card-text">Average Size: <span id="icmp-average-size"></span></p>
+                        <p class="card-text">Packets in Last Second: <span id="icmp-packets-last-second"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">OTHERS Statistics</h5>
+                        <p class="card-text">Total Packets: <span id="others-total-packets"></span></p>
+                        <p class="card-text">Average Size: <span id="others-average-size"></span></p>
+                        <p class="card-text">Packets in Last Second: <span id="others-packets-last-second"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ajout d'un conteneur pour le graphique -->
+        <!-- <div class="mt-4">
+            <canvas id="packets-chart" width="400" height="200"></canvas>
+        </div> -->
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <script>
+        var socket = io.connect();
+
+        // Créer un graphique
+        // var ctx = document.getElementById('packets-chart').getContext('2d');
+        // var packetsChart = new Chart(ctx, {
+        //     type: 'line',
+        //     data: {
+        //         labels: [],
+        //         datasets: [{
+        //             label: 'Packets per Second',
+        //             data: [],
+        //             borderColor: 'rgba(75, 192, 192, 1)',
+        //             borderWidth: 1,
+        //             fill: false
+        //         }]
+        //     },
+        //     options: {
+        //         scales: {
+        //             x: {
+        //                 type: 'linear',
+        //                 position: 'bottom'
+        //             },
+        //             y: {
+        //                 min: 0
+        //             }
+        //         }
+        //     }
+        // });
+
+        socket.on('update', function(data) {
+            // Mettez à jour votre interface utilisateur avec les données reçues de Kafka
+            document.getElementById('tcp-total-packets').innerText = data.TCP.total_packets;
+            document.getElementById('tcp-average-size').innerText = data.TCP.average_size.toFixed(2);
+            document.getElementById('tcp-packets-last-second').innerText = data.TCP.packets_in_last_second;
+
+            document.getElementById('udp-total-packets').innerText = data.UDP.total_packets;
+            document.getElementById('udp-average-size').innerText = data.UDP.average_size.toFixed(2);
+            document.getElementById('udp-packets-last-second').innerText = data.UDP.packets_in_last_second;
+
+            document.getElementById('icmp-total-packets').innerText = data.ICMP.total_packets;
+            document.getElementById('icmp-average-size').innerText = data.ICMP.average_size.toFixed(2);
+            document.getElementById('icmp-packets-last-second').innerText = data.ICMP.packets_in_last_second;
+
+            document.getElementById('others-total-packets').innerText = data.UNKNOWN.total_packets;
+            document.getElementById('others-average-size').innerText = data.UNKNOWN.average_size.toFixed(2);
+            document.getElementById('others-packets-last-second').innerText = data.UNKNOWN.packets_in_last_second;
+            // Limiter la taille du tableau des étiquettes à 10 éléments
+            // if (packetsChart.data.labels.length >= 10) {
+            //     packetsChart.data.labels.shift();
+            //     packetsChart.data.datasets[0].data.shift();
+            // }
+
+            // // Ajouter la nouvelle valeur à la fin du tableau des données
+            // packetsChart.data.labels.push(new Date().toLocaleTimeString());
+            // packetsChart.data.datasets[0].data.push(data.Total.total_packets);
+            // packetsChart.update();
+        });
+    </script>
+</body>
+</html>

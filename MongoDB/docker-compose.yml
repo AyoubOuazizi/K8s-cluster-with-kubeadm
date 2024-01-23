@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  mongodb1:
+    image: mongo:latest
+    container_name: mongo_TCP
+    ports:
+      - "27017:27017"
+
+  mongodb2:
+    image: mongo:latest
+    container_name: mongo_UDP
+    ports:
+      - "27018:27017"
+
+  mongodb3:
+    image: mongo:latest
+    container_name: mongo_ICMP
+    ports:
+      - "27019:27017"
+
+  mongodb4:
+    image: mongo:latest
+    container_name: mongo_UNKNOWN
+    ports:
+      - "27020:27017"

@@ -1,0 +1,237 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Disable swap permanently
+      command: swapoff -a
+      ignore_errors: yes
+
+    - name: Comment out swap entry in /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^.*\sswap\s.*$'
+        line: '#\g<0>'
+
+    - name: Install required kernel modules
+      copy:
+        content: |
+          overlay
+          br_netfilter
+        dest: /etc/modules-load.d/containerd.conf
+
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Configure sysctl parameters
+      copy:
+        content: |
+          net.bridge.bridge-nf-call-iptables  = 1
+          net.ipv4.ip_forward                 = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+
+    - name: Apply sysctl settings
+      command: sysctl --system
+
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+    - name: Install packages to allow apt to use a repository over HTTPS
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - ca-certificates
+        - curl
+        - gnupg
+
+    - name: Add Docker’s official GPG key
+      shell: "install -m 0755 -d /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && chmod a+r /etc/apt/keyrings/docker.gpg"
+
+    - name: Set up Docker repository
+      shell: >
+        echo "deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu bionic stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+    - name: Install containerd.io
+      apt:
+        name: containerd.io
+        state: present
+
+    - name: Create /etc/containerd directory if it doesn't exist
+      file:
+        path: /etc/containerd
+        state: directory
+
+    - name: Configure containerd
+      shell: "containerd config default | tee /etc/containerd/config.toml"
+
+    - name: Change containerd configuration
+      replace:
+        path: /etc/containerd/config.toml
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+    
+    - name: Update apt package index and install prerequisites for Kubernetes repository
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Download Kubernetes GPG key
+      shell: "curl -fsSL https://dl.k8s.io/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg"
+
+    - name: Add Kubernetes apt repository
+      shell: >
+        echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list    
+
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+    - name: Install kubelet, kubeadm, and kubectl
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+
+    - name: Pin Kubernetes versions
+      command: "apt-mark hold kubelet kubeadm kubectl"
+
+- hosts: cp_nodes 
+  become: yes
+  tasks:
+    - name: Initialize the Kubernetes Cluster on the master node
+      command: kubeadm init
+      args:
+        creates: /etc/kubernetes/admin.conf
+      register: kubeadm_init_result
+
+    - name: Save join command
+      set_fact:
+        join_command: "{{ kubeadm_init_result.stdout_lines[-2] | regex_replace('\\\\', '') }}{{ kubeadm_init_result.stdout_lines[-1] | regex_replace('\t', '') }}"
+      when: kubeadm_init_result is defined and kubeadm_init_result.stdout_lines is defined and kubeadm_init_result.stdout_lines | length > 1
+
+    - name: Extract join command
+      command: echo {{ join_command }}
+      when: join_command is defined
+      register: join_command_content
+
+    - name: Create .kube directory
+      become_user: root
+      file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: directory
+
+    - name: Copy admin.conf to .kube directory
+      become_user: root
+      command: cp -f /etc/kubernetes/admin.conf "{{ ansible_env.HOME }}/.kube/config"
+
+    - name: Change ownership of .kube/config
+      become_user: root
+      shell: chown $(id -u):$(id -g) "{{ ansible_env.HOME }}/.kube/config"
+
+    - name: Set KUBECONFIG environment variable for the root user
+      lineinfile:
+        path: /root/.bashrc
+        line: 'export KUBECONFIG=/etc/kubernetes/admin.conf'
+      when: kubeadm_init_result.rc == 0
+
+- hosts: worker_nodes
+  become: yes
+  tasks:
+    - name: Store join command content
+      set_fact:
+        kubeadm_join_command: "{{ hostvars['cp_node']['join_command_content']['stdout'] }}"
+
+    - name: Join command on worker nodes
+      command: "{{ kubeadm_join_command }}"
+
+- hosts: cp_nodes
+  become: yes
+  tasks:
+    - name: Install Weave CNI
+      shell: "kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
+
+    - name: Install MetalLB
+      command: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+
+    - name: Create metallb directory
+      become_user: root
+      file:
+        path: "{{ ansible_env.HOME }}/metallb"
+        state: directory
+
+    - name: Create ipaddresspool.yaml
+      blockinfile:
+        path: "{{ ansible_env.HOME }}/metallb/ipaddresspool.yaml"
+        create: yes
+        block: |
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: default-pool
+            namespace: metallb-system
+          spec:
+            addresses:
+            - {{ hostvars['cp_node']['ansible_host'] }}-{{ hostvars['cp_node']['ansible_host'] }}
+# {% for host in groups['worker_nodes'] %}
+# - {{ hostvars[host]['ansible_host'] }}-{{ hostvars[host]['ansible_host'] }}
+# {% endfor %}
+
+    - name: Create l2advertisement.yaml
+      blockinfile:
+        path: "{{ ansible_env.HOME }}/metallb/l2advertisement.yaml"
+        create: yes
+        block: |
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: default
+            namespace: metallb-system
+          spec:
+            ipAddressPools:
+            - default-pool
+
+    - name: Apply ipaddresspool.yaml
+      command: kubectl apply -f {{ ansible_env.HOME }}/metallb/ipaddresspool.yaml
+      retries: 3
+      delay: 10
+      register: result
+      until: result.rc == 0
+
+    - name: Apply l2advertisement.yaml
+      command: kubectl apply -f {{ ansible_env.HOME }}/metallb/l2advertisement.yaml
+
+    # - name: Download Helm installation script
+    #   get_url:
+    #     url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    #     dest: /tmp/get_helm.sh
+    #     mode: 0755
+
+    # - name: Run Helm installation script
+    #   command: /tmp/get_helm.sh
+    #   args:
+    #     creates: /usr/local/bin/helm

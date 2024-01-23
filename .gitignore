@@ -1,0 +1,10 @@
+# Ignorer les fichiers de clés GCP
+# sdtd-key.json
+
+# Ignorer le dossier contenant les credentials
+Credentials/*
+
+# Terraform excludes
+*.tfstate
+*.tfstate.backup
+.terraform*
