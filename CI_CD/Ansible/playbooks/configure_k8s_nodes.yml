@@ -217,7 +217,7 @@
 
     - name: Apply ipaddresspool.yaml
       command: kubectl apply -f {{ ansible_env.HOME }}/metallb/ipaddresspool.yaml
-      retries: 3
+      retries: 10
       delay: 10
       register: result
       until: result.rc == 0
