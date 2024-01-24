@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: web-page
+  name: web-page
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: web-page
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: web-page
+    spec:
+      containers:
+        - args:
+            - sh
+            - -c
+            - node app.js
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka_bootstrap_servers_value
+            - name: KAFKA_TOPIC
+              value: kafka_topic_value
+          image: ayoubtest1/webpage:latest
+          name: web-page
+          ports:
+            - containerPort: 3000
+          resources: {}
+      restartPolicy: Always
+status: {}

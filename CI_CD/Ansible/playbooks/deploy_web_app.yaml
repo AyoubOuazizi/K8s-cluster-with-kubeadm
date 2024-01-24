@@ -16,17 +16,25 @@
 
     - name: Copier le fichier manifest
       copy:
-        src: ../../Manifests/WebApp/my-stats-script-deployment.yaml
-        dest: /tmp/WebPage/my-stats-script-deployment.yaml
+        src: ../../Manifests/WebApp/web-page-deployment.yaml
+        dest: /tmp/WebPage/web-page-deployment.yaml
+
+    - name: Copier le fichier manifest (service)
+      copy:
+        src: ../../Manifests/WebApp/web-page-service.yaml
+        dest: /tmp/WebPage/web-page-service.yaml
 
     - name: Modifier les paramètres dans le manifest
       replace:
-        path: /tmp/WebPage/my-stats-script-deployment.yaml
+        path: /tmp/WebPage/web-page-deployment.yaml
         regexp: "{{ item.regexp }}"
         replace: "{{ item.replace }}"
       with_items:
         - { regexp: 'kafka_bootstrap_servers_value', replace: "{{ kafka_bootstrap_servers }}" }
         - { regexp: 'kafka_topic_value', replace: "visualisation" }
 
-    - name: Apply the Kubernetes configuration for stats-script
-      command: kubectl apply -f /tmp/WebPages/my-stats-script-deployment.yaml
+    - name: Apply the Kubernetes configuration for web-page-deployment
+      command: kubectl apply -f /tmp/WebPage/web-page-deployment.yaml
+      
+    - name: Apply the Kubernetes configuration for web-page-service
+      command: kubectl apply -f /tmp/WebPage/web-page-service.yaml

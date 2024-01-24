@@ -12,5 +12,6 @@ spec:
       targetPort: 3000
   selector:
     io.kompose.service: web-page
+  type: LoadBalancer  # Changer le type du service en LoadBalancer
 status:
   loadBalancer: {}
