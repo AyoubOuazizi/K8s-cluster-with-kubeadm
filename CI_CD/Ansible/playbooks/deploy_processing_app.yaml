@@ -27,10 +27,10 @@
       with_items:
         - { regexp: 'kafka_bootstrap_servers_value', replace: "{{ kafka_bootstrap_servers }}" }
         - { regexp: 'kafka_topic_value', replace: "capture" }
-        - { regexp: 'mongo_tcp_uri_value', replace: "mongodb://admin:password@mongodb-test.default.svc.cluster.local:27017/" }
-        - { regexp: 'mongo_udp_uri_value', replace: "mongodb://admin:password@mongodb-test-1.default.svc.cluster.local:27018/" }
-        - { regexp: 'mongo_icmp_uri_value', replace: "mongodb://admin:password@mongodb-test-2.default.svc.cluster.local:27019/" }
-        - { regexp: 'mongo_unknown_uri_value', replace: "mongodb://admin:password@mongodb-test-3.default.svc.cluster.local:27020/" }
+        - { regexp: 'mongo_tcp_uri_value', replace: "mongodb://mongodb-test.default.svc.cluster.local:27017/" }
+        - { regexp: 'mongo_udp_uri_value', replace: "mongodb://mongodb-test-1.default.svc.cluster.local:27017/" }
+        - { regexp: 'mongo_icmp_uri_value', replace: "mongodb://mongodb-test-2.default.svc.cluster.local:27017/" }
+        - { regexp: 'mongo_unknown_uri_value', replace: "mongodb://mongodb-test-3.default.svc.cluster.local:27017/" }
 
     - name: Apply the Kubernetes configuration for DataProcessing
       command: kubectl apply -f /tmp/DataProcessing/my-app-deployment.yaml

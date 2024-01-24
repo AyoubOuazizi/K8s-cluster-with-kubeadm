@@ -1,7 +1,9 @@
 kind: Kustomization
 resources:
+  - ConfigMap2.yaml
   - PersistentVolumeClaim2.yaml
   - PersistentVolume2.yaml
+  - Secret2.yaml
   - Service2.yaml
   - StatefulSet2.yaml
   - StorageClass2.yaml

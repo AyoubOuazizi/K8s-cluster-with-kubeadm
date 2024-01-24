@@ -90,4 +90,4 @@
         mode: '0755'
 
     - name: Execute python script
-      shell: nohup python3 /tmp/traffic_capture/traffic_capture.py &
+      command: python3 /tmp/traffic_capture/traffic_capture.py

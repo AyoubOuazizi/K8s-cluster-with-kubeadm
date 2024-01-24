@@ -1,7 +1,9 @@
 kind: Kustomization
 resources:
+  - ConfigMap1.yaml
   - PersistentVolumeClaim1.yaml
   - PersistentVolume1.yaml
+  - Secret1.yaml
   - Service1.yaml
   - StatefulSet1.yaml
   - StorageClass1.yaml

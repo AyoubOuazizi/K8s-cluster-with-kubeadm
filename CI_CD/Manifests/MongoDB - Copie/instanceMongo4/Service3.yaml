@@ -5,11 +5,11 @@ metadata:
   labels:
     app: database
 spec:
-  clusterIP: None
+  # clusterIP: None
   selector:
     app: database
   ports:
     - protocol: TCP
       port: 27020  # Port que vous souhaitez ajouter
-      targetPort: 27017  # Port auquel le service redirigera le trafic
+      targetPort: 27020  # Port auquel le service redirigera le trafic
 
