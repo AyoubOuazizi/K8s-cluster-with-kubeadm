@@ -1,5 +1,5 @@
 # Ignore keys
-*/Credentials/*
+*/Credentials/*.json
 */.ssh/ansible_key*
 
 # Terraform excludes
