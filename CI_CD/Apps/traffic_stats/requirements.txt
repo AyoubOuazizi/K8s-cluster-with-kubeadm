@@ -1,0 +1,6 @@
+pymongo
+kafka-python
+python-dotenv
+termcolor
+pyshark
+confluent_kafka

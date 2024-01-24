@@ -1,0 +1,32 @@
+---
+- name: Deploy stats app
+  hosts: cp_nodes
+  become: yes
+  tasks:    
+    - name: Get Kafka external IP and port
+      command: "kubectl get service kafka-cluster -o=jsonpath='{.status.loadBalancer.ingress[0].ip}:{.spec.ports[0].nodePort}'"
+      register: kafka_info
+
+    - name: Set variables from Kafka information
+      set_fact:
+        kafka_bootstrap_servers: "{{ kafka_info.stdout }}"
+
+    - name: Create WebPage directory
+      command: sh -c "mkdir -p /tmp/WebPage"
+
+    - name: Copier le fichier manifest
+      copy:
+        src: ../../Manifests/WebApp/my-stats-script-deployment.yaml
+        dest: /tmp/WebPage/my-stats-script-deployment.yaml
+
+    - name: Modifier les paramètres dans le manifest
+      replace:
+        path: /tmp/WebPage/my-stats-script-deployment.yaml
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      with_items:
+        - { regexp: 'kafka_bootstrap_servers_value', replace: "{{ kafka_bootstrap_servers }}" }
+        - { regexp: 'kafka_topic_value', replace: "visualisation" }
+
+    - name: Apply the Kubernetes configuration for stats-script
+      command: kubectl apply -f /tmp/WebPages/my-stats-script-deployment.yaml

@@ -1,0 +1,15 @@
+version: '3'
+services:
+  my_stats_script:
+    build: .
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka_bootstrap_servers_value
+      - KAFKA_TOPIC=kafka_topic_value
+      - MONGO_TCP_URI=mongo_tcp_uri_value
+      - MONGO_UDP_URI=mongo_udp_uri_value
+      - MONGO_ICMP_URI=mongo_icmp_uri_value
+      - MONGO_UNKNOWN_URI=mongo_unknown_uri_value
+    image: ayoubtest1/statsapp:latest
+
+    command: sh -c "python stats-app.py"
+

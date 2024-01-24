@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  web-page:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka_bootstrap_servers_value
+      - KAFKA_TOPIC=kafka_topic_value
+    image: ayoubtest1/webpage:latest
+
+    command: sh -c "node app.js"
