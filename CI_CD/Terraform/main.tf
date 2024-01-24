@@ -1,7 +1,7 @@
 provider "google" {
   credentials = file("../Credentials/cis-key.json")
-  project     = "cis-project-411615"
-  region      = "us-central1"
+  project     = var.project_id
+  region      = var.region
 }
 
 resource "google_compute_network" "vpc_network" {
@@ -12,7 +12,7 @@ resource "google_compute_network" "vpc_network" {
 resource "google_compute_subnetwork" "cluster_subnet" {
   name          = "cluster-subnet"
   ip_cidr_range = "10.0.0.0/16"
-  region        = "us-central1"
+  region        = var.region
   network       = google_compute_network.vpc_network.name
 }
 
@@ -41,7 +41,7 @@ resource "google_compute_instance" "cp_node" {
   }
 
   metadata = {
-    ssh-keys = "cis-project:${file("../.ssh/ansible_key.pub")}"
+    ssh-keys = "k8s-project:${file("../.ssh/ansible_key.pub")}"
   }
 }
 
@@ -71,7 +71,7 @@ resource "google_compute_instance" "worker_node" {
   }
 
   metadata = {
-    ssh-keys = "cis-project:${file("../.ssh/ansible_key.pub")}"
+    ssh-keys = "k8s-project:${file("../.ssh/ansible_key.pub")}"
   }
 }
 

@@ -1,0 +1,19 @@
+---
+- name: Install Prometheus using Helm
+  become: yes
+  hosts: cp_nodes
+  tasks:
+    - name: Add Prometheus Helm repository
+      command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      register: add_repo_result
+      ignore_errors: yes
+
+    - name: Update Helm repositories
+      command: helm repo update
+      when: add_repo_result is success
+
+    - name: Install Prometheus using Helm
+      command: helm install prometheus prometheus-community/kube-prometheus-stack
+
+    - name: Change Prometheus service to NodePort
+      command: kubectl patch svc prometheus-grafana --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"}]'

@@ -1,19 +1,20 @@
+import os
 from confluent_kafka import Consumer, KafkaError
 from Db import *
 import json
 
 # Configuration du consommateur Kafka
 consumer_config = {
-    'bootstrap.servers': 'localhost:29092',  # les serveurs Kafka
+    'bootstrap.servers': os.environ.get('KAFKA_BOOTSTRAP_SERVERS'),
     'group.id': 'packet-consumer',
-    'auto.offset.reset': 'earliest'  # Réinitialisation de l'offset au début du topic en cas de consommateur nouveau
+    'auto.offset.reset': 'earliest'
 }
 
 # Création d'une instance de consommateur Kafka
 consumer = Consumer(consumer_config)
 
 # Abonnement au topic "capture"
-kafka_topic = 'capture'
+kafka_topic = os.environ.get('KAFKA_TOPIC')
 consumer.subscribe([kafka_topic])
 
 # Configuration de MongoDB

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-test-2
+  labels:
+    app: database
+spec:
+  clusterIP: None
+  selector:
+    app: database
+  ports:
+    - protocol: TCP
+      port: 27019  # Port que vous souhaitez ajouter
+      targetPort: 27019  # Port auquel le service redirigera le trafic
+

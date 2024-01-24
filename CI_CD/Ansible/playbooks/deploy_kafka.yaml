@@ -2,14 +2,13 @@
 - name: Deploy Apache Zookeeper and Kafka
   become: yes
   hosts: cp_nodes
-  gather_facts: false
   tasks:
     - name: Create Zookeeper data directory
       command: sh -c "mkdir -p /bitnami/zookeeper/data"
 
     - name: Copy the configuration file from local machine to remote master
       copy:
-        src: ../../Manifests/zookeeper-kafka-cluster.yml
+        src: ../../Manifests/Kafka/zookeeper-kafka-cluster.yml
         dest: /tmp/zookeeper-kafka-cluster.yml
 
     - name: Apply the Kubernetes configuration

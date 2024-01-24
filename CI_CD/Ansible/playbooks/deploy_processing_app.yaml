@@ -1,0 +1,36 @@
+---
+- name: Deploy data processing app
+  hosts: cp_nodes
+  become: yes
+  tasks:    
+    - name: Get Kafka external IP and port
+      command: "kubectl get service kafka-cluster -o=jsonpath='{.status.loadBalancer.ingress[0].ip}:{.spec.ports[0].nodePort}'"
+      register: kafka_info
+
+    - name: Set variables from Kafka information
+      set_fact:
+        kafka_bootstrap_servers: "{{ kafka_info.stdout }}"
+
+    - name: Create DataProcessing directory
+      command: sh -c "mkdir -p /tmp/DataProcessing"
+
+    - name: Copier le fichier manifest
+      copy:
+        src: ../../Manifests/DataProcessing/my-app-deployment.yaml
+        dest: /tmp/DataProcessing/my-app-deployment.yaml
+
+    - name: Modifier les paramètres dans le manifest
+      replace:
+        path: /tmp/DataProcessing/my-app-deployment.yaml
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      with_items:
+        - { regexp: 'kafka_bootstrap_servers_value', replace: "{{ kafka_bootstrap_servers }}" }
+        - { regexp: 'kafka_topic_value', replace: "capture" }
+        - { regexp: 'mongo_tcp_uri_value', replace: "mongodb://admin:password@mongodb-test.default.svc.cluster.local:27017/" }
+        - { regexp: 'mongo_udp_uri_value', replace: "mongodb://admin:password@mongodb-test-1.default.svc.cluster.local:27018/" }
+        - { regexp: 'mongo_icmp_uri_value', replace: "mongodb://admin:password@mongodb-test-2.default.svc.cluster.local:27019/" }
+        - { regexp: 'mongo_unknown_uri_value', replace: "mongodb://admin:password@mongodb-test-3.default.svc.cluster.local:27020/" }
+
+    - name: Apply the Kubernetes configuration for DataProcessing
+      command: kubectl apply -f /tmp/DataProcessing/my-app-deployment.yaml

@@ -1,0 +1,93 @@
+---
+- name: Configure DNS for master node & run traffic capture app
+  hosts: cp_nodes
+  become: yes
+  tasks:
+    - name: Remove existing /etc/resolv.conf symbolic link
+      file:
+        path: /etc/resolv.conf
+        state: absent
+
+    - name: Create symbolic link to /run/systemd/resolve/resolv.conf
+      file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+
+    - name: Get kube-dns IP
+      shell: "kubectl get service --namespace kube-system kube-dns -o jsonpath='{.spec.clusterIP}'"
+      register: kube_dns_ip
+
+    - name: Create resolved.conf.d directory
+      command: sh -c "mkdir -p /etc/systemd/resolved.conf.d"
+
+    - name: Create systemd-resolved configuration file
+      copy:
+        content: |
+          [Resolve]
+          Cache=yes
+          DNS={{ kube_dns_ip.stdout }}
+          Domains=default.svc.cluster.local svc.cluster.local cluster.local
+        dest: /etc/systemd/resolved.conf.d/00-k8s-dns-resolver.conf
+        mode: '0644'
+
+    - name: Restart systemd-resolved
+      systemd:
+        name: systemd-resolved
+        state: restarted
+
+    - name: Update apt package list
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - net-tools
+          - wireshark
+          - tshark
+        state: present
+
+    - name: Install Python module pyshark
+      pip:
+        name: pyshark
+
+    - name: Install Python module confluent-kafka
+      pip:
+        name: confluent-kafka
+
+    - name: Find interface with master IP
+      set_fact:
+        allNetworkInterfaces: "{{ ansible_facts | dict2items | selectattr('value.ipv4', 'defined') | map(attribute='value') | list }}"
+
+    - name: Find interface with master IP
+      set_fact:
+        master_interface: "{{ allNetworkInterfaces | selectattr('type', 'equalto', 'ether') | sort(attribute='device') | list | map(attribute='device') | first }}"
+    
+    - name: Get Kafka external IP and port
+      command: "kubectl get service kafka-cluster -o=jsonpath='{.status.loadBalancer.ingress[0].ip}:{.spec.ports[0].nodePort}'"
+      register: kafka_info
+
+    - name: Set variables from Kafka information
+      set_fact:
+        kafka_bootstrap_servers: "{{ kafka_info.stdout }}"
+        external_interface: "{{ master_interface }}"
+
+    - name: Create traffic_capture directory
+      command: sh -c "mkdir -p /tmp/traffic_capture"
+
+    - name: Generate config.ini from template
+      template:
+        src: ../../Apps/traffic_capture/config.ini.j2
+        dest: /tmp/traffic_capture/config.ini
+
+    - name: Copy the python script from local machine to remote master
+      copy:
+        src: ../../Apps/traffic_capture/traffic_capture.py
+        dest: /tmp/traffic_capture/traffic_capture.py
+        mode: '0755'
+
+    - name: Execute python script
+      shell: nohup python3 /tmp/traffic_capture/traffic_capture.py &

@@ -1,0 +1,9 @@
+kind: Kustomization
+resources:
+  - ConfigMap3.yaml
+  - PersistentVolumeClaim3.yaml
+  - PersistentVolume3.yaml
+  - Secret3.yaml
+  - Service3.yaml
+  - StatefulSet3.yaml
+  - StorageClass3.yaml

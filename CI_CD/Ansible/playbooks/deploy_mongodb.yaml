@@ -1,0 +1,33 @@
+---
+- name: Deploy MongoDB
+  become: yes
+  hosts: all
+  tasks:
+    - name: Create persistant volume directory
+      command: sh -c "mkdir -p /mnt/data"
+
+- hosts: cp_nodes
+  become: yes
+  tasks:
+    - name: Label nodes with size=large
+      shell: kubectl label nodes cp size=large
+
+    - name: Taint nodes to untaint control-plane
+      shell: kubectl taint nodes cp node-role.kubernetes.io/control-plane-
+
+    - name: Copy the configuration folder from local machine to remote master
+      copy:
+        src: ../../Manifests/MongoDB
+        dest: /tmp
+
+    - name: Apply the Kubernetes configuration for instanceMongo1
+      command: kubectl apply -k /tmp/MongoDB/instanceMongo1
+
+    - name: Apply the Kubernetes configuration for instanceMongo2
+      command: kubectl apply -k /tmp/MongoDB/instanceMongo2
+
+    - name: Apply the Kubernetes configuration for instanceMongo3
+      command: kubectl apply -k /tmp/MongoDB/instanceMongo3
+
+    - name: Apply the Kubernetes configuration for instanceMongo4
+      command: kubectl apply -k /tmp/MongoDB/instanceMongo4

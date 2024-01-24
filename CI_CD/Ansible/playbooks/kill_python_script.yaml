@@ -1,0 +1,12 @@
+---
+- name: Arrêter le script Python avec Ansible
+  hosts: cp_nodes
+  tasks:
+    - name: Trouver le PID du script Python
+      shell: "pgrep -f '/tmp/traffic_capture.py'"
+      ignore_errors: true
+      register: pid_result
+
+    - name: Arrêter le script si en cours d'exécution
+      shell: "kill {{ pid_result.stdout }} || true"
+      when: pid_result.stdout is defined

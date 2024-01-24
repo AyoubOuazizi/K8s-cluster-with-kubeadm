@@ -1,11 +1,12 @@
 from pymongo import MongoClient
+import os
 
 def initialize_db() :
     # Connexion à la base de données MongoDB
-    client_TCP = MongoClient('mongodb://localhost:27017/') 
-    client_UDP = MongoClient('mongodb://localhost:27018/') 
-    client_ICMP = MongoClient('mongodb://localhost:27019/') 
-    client_UNKNOWN = MongoClient('mongodb://localhost:27020/') 
+    client_TCP = MongoClient(os.environ.get('MONGO_TCP_URI'))
+    client_UDP = MongoClient(os.environ.get('MONGO_UDP_URI'))
+    client_ICMP = MongoClient(os.environ.get('MONGO_ICMP_URI'))
+    client_UNKNOWN = MongoClient(os.environ.get('MONGO_UNKNOWN_URI'))
 
     # Sélection de la base de données 'traffic'
     db_TCP = client_TCP['traffic']
