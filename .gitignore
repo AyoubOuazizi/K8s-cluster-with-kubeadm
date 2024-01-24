@@ -1,6 +1,6 @@
 # Ignore keys
-Credentials/*
-.ssh/*
+*/Credentials/*
+*/.ssh/*
 
 # Terraform excludes
 *.tfstate*
