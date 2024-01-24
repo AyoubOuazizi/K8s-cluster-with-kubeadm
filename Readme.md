@@ -46,20 +46,12 @@ Go to `K8s-cluster-with-kubeadm` directory
 
 `chmod a+x /usr/local/bin/kompose`
 
-
+## Use Kompose:
 
 `python3 ./CI_CD/Apps/replace_env_variables/replace_env_variables.py ./CI_CD/Apps/dataProcessing/`
 
 `sudo kompose convert -f docker-compose-env.yaml -o ../../Manifests/DataProcessing/ --with-kompose-annotation=false --build local --push-image=True -v`
 
 
-# L'ajout de la clé de GCP aux variables d'environements:
-$env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\hp\Desktop\SDTD\Credentials\sdtd-key.json"
-
-# Création du container mongo:
-docker run --name mongo -d -p 27017:27017 mongo:latest
-
-A Voir:
-    Var d'env
-
-
+## L'ajout de la clé de GCP aux variables d'environements:
+$env:GOOGLE_APPLICATION_CREDENTIALS="[YOUR_GCP_KEY]"

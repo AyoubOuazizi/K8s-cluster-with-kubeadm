@@ -46,7 +46,7 @@ resource "google_compute_instance" "cp_node" {
 }
 
 resource "google_compute_instance" "worker_node" {
-  count        = 4
+  count        = 3
   name         = "worker-${count.index + 1}"
   machine_type = "e2-standard-2"
   zone         = "us-central1-a"
